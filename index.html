@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML Viewer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&lt;/&gt;</text></svg>" />
+
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/dialog/dialog.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/xml-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/brace-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchtags.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closetag.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/search.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/searchcursor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/dialog/dialog.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/html-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/xml-hint.min.js"></script>
+
+  <!-- Beautify -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.1/beautify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.1/beautify-html.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.1/beautify-css.min.js"></script>
+
+  <style>
+    /* ── Design Tokens ──────────────────────── */
+    :root {
+      --bg-app: #0c0e14;
+      --bg-surface: #13151f;
+      --bg-raised: #1a1d2b;
+      --bg-editor: #0f1119;
+      --border: #252838;
+      --border-focus: #e05d44;
+      --text: #e4e8f1;
+      --text-dim: #8b92a8;
+      --text-muted: #555c73;
+      --accent: #e05d44;
+      --accent-hover: #f06e56;
+      --accent-glow: rgba(224,93,68,.22);
+      --accent2: #f0a030;
+      --accent2-glow: rgba(240,160,48,.18);
+      --success: #3dd68c;
+      --success-bg: rgba(61,214,140,.08);
+      --error: #f04444;
+      --info: #5b9cf5;
+      --tag: #e05d44;
+      --attr: #f0a030;
+      --string: #3dd68c;
+      --comment: #555c73;
+      --radius: 8px;
+      --radius-lg: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,.5);
+      --transition: .16s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Reset ──────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-app); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    #app { display: flex; flex-direction: column; height: 100%; }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      display: flex; align-items: center; gap: 12px;
+      height: 52px; padding: 0 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0; z-index: 10;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 9px;
+      font-weight: 700; font-size: 15px; letter-spacing: -.02em;
+      white-space: nowrap; user-select: none;
+    }
+    .brand-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      font-size: 13px; font-weight: 800; color: #fff;
+      box-shadow: 0 2px 10px var(--accent-glow);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    header .sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+
+    /* ── Buttons ────────────────────────────── */
+    .actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg-raised);
+      color: var(--text-dim); font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all var(--transition);
+      white-space: nowrap; user-select: none; font-family: inherit;
+    }
+    .btn:hover {
+      background: #242840; border-color: #3a3f58; color: var(--text);
+      transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .btn.primary:hover { background: var(--accent-hover); box-shadow: 0 4px 18px var(--accent-glow); }
+    .btn.danger { background: rgba(240,68,68,.1); border-color: rgba(240,68,68,.25); color: var(--error); }
+    .btn.danger:hover { background: rgba(240,68,68,.2); }
+
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    .layout-btn {
+      width: 30px; height: 30px; border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--bg-raised); color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+    .layout-btn:hover { background: #242840; color: var(--text-dim); }
+    .layout-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .layout-btn svg { width: 14px; height: 14px; }
+
+    /* ── Main layout ───────────────────────── */
+    main { display: flex; flex: 1; overflow: hidden; }
+    main.vertical { flex-direction: column; }
+
+    /* ── Panes ──────────────────────────────── */
+    .pane { display: flex; flex-direction: column; overflow: hidden; background: var(--bg-surface); }
+    #editor-pane { width: 50%; min-width: 200px; }
+    main.vertical #editor-pane { width: 100% !important; height: 50%; min-height: 100px; }
+    #preview-pane { flex: 1; min-width: 200px; position: relative; }
+    main.vertical #preview-pane { min-height: 100px; }
+
+    .pane-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; height: 34px;
+      background: var(--bg-raised); border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .pane-title {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .9px; color: var(--text-muted);
+    }
+    .pane-actions { display: flex; gap: 3px; }
+    .pane-btn {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: none; background: transparent; color: var(--text-muted);
+      cursor: pointer; transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pane-btn:hover { background: rgba(255,255,255,.05); color: var(--text); }
+    .pane-btn svg { width: 13px; height: 13px; }
+
+    .pane-body { flex: 1; overflow: hidden; position: relative; }
+
+    /* ── Resize handle ─────────────────────── */
+    #resize-handle {
+      width: 5px; cursor: col-resize; background: var(--border);
+      flex-shrink: 0; transition: background var(--transition);
+      position: relative;
+    }
+    #resize-handle:hover, #resize-handle.dragging { background: var(--accent); }
+    main.vertical #resize-handle {
+      width: 100%; height: 5px; cursor: row-resize;
+    }
+
+    /* ── CodeMirror theme ──────────────────── */
+    .CodeMirror {
+      height: 100% !important; background: var(--bg-editor) !important;
+      color: var(--text) !important;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Cascadia Code', monospace;
+      font-size: 13px; line-height: 1.65;
+    }
+    .CodeMirror-gutters {
+      background: var(--bg-editor) !important;
+      border-right: 1px solid var(--border) !important;
+    }
+    .CodeMirror-linenumber { color: var(--text-muted) !important; font-size: 11px; }
+    .CodeMirror-cursor { border-left-color: var(--accent) !important; border-left-width: 2px !important; }
+    .CodeMirror-selected { background: rgba(224,93,68,.15) !important; }
+    .CodeMirror-focused .CodeMirror-selected { background: rgba(224,93,68,.22) !important; }
+    .CodeMirror-activeline-background { background: rgba(255,255,255,.02) !important; }
+    .CodeMirror-matchingbracket {
+      color: var(--accent) !important; font-weight: 700;
+      background: rgba(224,93,68,.12) !important; text-decoration: underline;
+    }
+    .CodeMirror-matchingtag { background: rgba(224,93,68,.1) !important; }
+    .CodeMirror-foldgutter { width: 14px !important; }
+    .CodeMirror-foldgutter-open, .CodeMirror-foldgutter-folded { color: var(--text-muted) !important; }
+
+    /* Syntax colors */
+    .cm-s-default .cm-tag { color: var(--tag) !important; }
+    .cm-s-default .cm-attribute { color: var(--attr) !important; }
+    .cm-s-default .cm-string { color: var(--string) !important; }
+    .cm-s-default .cm-comment { color: var(--comment) !important; font-style: italic; }
+    .cm-s-default .cm-keyword { color: #c792ea !important; }
+    .cm-s-default .cm-def { color: #82aaff !important; }
+    .cm-s-default .cm-variable { color: var(--text) !important; }
+    .cm-s-default .cm-variable-2 { color: var(--text) !important; }
+    .cm-s-default .cm-number { color: #f78c6c !important; }
+    .cm-s-default .cm-atom { color: #c792ea !important; }
+    .cm-s-default .cm-property { color: #82aaff !important; }
+    .cm-s-default .cm-qualifier { color: #decb6b !important; }
+    .cm-s-default .cm-builtin { color: #decb6b !important; }
+    .cm-s-default .cm-bracket { color: var(--text-dim) !important; }
+
+    /* Autocomplete hints */
+    .CodeMirror-hints {
+      background: var(--bg-raised) !important; border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important; box-shadow: var(--shadow) !important;
+      font-family: 'JetBrains Mono', monospace !important; font-size: 12px !important;
+    }
+    .CodeMirror-hint { color: var(--text-dim) !important; padding: 4px 10px !important; }
+    .CodeMirror-hint-active { background: var(--accent-glow) !important; color: var(--text) !important; }
+
+    /* ── Preview iframe ────────────────────── */
+    #preview-frame {
+      width: 100%; height: 100%; border: none;
+      background: #fff;
+    }
+
+    /* ── Device frame ──────────────────────── */
+    #preview-pane .pane-body.device-mobile {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-app); padding: 16px;
+    }
+    .device-mobile #preview-frame {
+      width: 375px; max-width: 100%; height: 100%;
+      border-radius: 12px; box-shadow: 0 0 0 2px var(--border), var(--shadow);
+    }
+    #preview-pane .pane-body.device-tablet {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-app); padding: 16px;
+    }
+    .device-tablet #preview-frame {
+      width: 768px; max-width: 100%; height: 100%;
+      border-radius: 12px; box-shadow: 0 0 0 2px var(--border), var(--shadow);
+    }
+
+    /* ── Status bar ────────────────────────── */
+    #status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 26px; padding: 0 14px;
+      background: var(--bg-surface); border-top: 1px solid var(--border);
+      font-size: 10.5px; color: var(--text-muted); flex-shrink: 0;
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: 14px; }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); display: inline-block; margin-right: 4px;
+    }
+    .status-dot.ok { background: var(--success); box-shadow: 0 0 6px rgba(61,214,140,.4); }
+
+    /* ── Toast ──────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+      padding: 9px 18px; border-radius: 10px;
+      background: var(--bg-raised); border: 1px solid var(--border);
+      color: var(--text); font-size: 12.5px; font-weight: 500;
+      box-shadow: var(--shadow); opacity: 0;
+      transition: all .3s cubic-bezier(.4,0,.2,1);
+      pointer-events: none; z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Drop overlay ──────────────────────── */
+    .drop-overlay {
+      display: none; position: absolute; inset: 0; z-index: 20;
+      background: rgba(224,93,68,.06); border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      align-items: center; justify-content: center;
+      font-size: 14px; color: var(--accent); font-weight: 600;
+      pointer-events: none;
+    }
+    .drop-overlay.active { display: flex; }
+
+    /* ── Console ────────────────────────────── */
+    #console-panel {
+      display: none; max-height: 160px; overflow-y: auto;
+      background: var(--bg-editor); border-top: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      padding: 8px 12px; flex-shrink: 0;
+    }
+    #console-panel.open { display: block; }
+    .console-line { padding: 2px 0; display: flex; gap: 6px; align-items: baseline; }
+    .console-line.log { color: var(--text-dim); }
+    .console-line.warn { color: var(--accent2); }
+    .console-line.error { color: var(--error); }
+    .console-line .console-badge {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
+    }
+    .console-line.log .console-badge { background: rgba(91,156,245,.12); color: var(--info); }
+    .console-line.warn .console-badge { background: rgba(240,160,48,.12); color: var(--accent2); }
+    .console-line.error .console-badge { background: rgba(240,68,68,.12); color: var(--error); }
+
+    /* ── Responsive ────────────────────────── */
+    @media (max-width: 768px) {
+      main { flex-direction: column !important; }
+      #editor-pane { width: 100% !important; height: 50% !important; min-height: 150px; }
+      #resize-handle { width: 100% !important; height: 5px !important; cursor: row-resize !important; }
+      .actions { display: none; }
+      .header-right .layout-btn { display: none; }
+    }
+
+    #file-input { display: none; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">&lt;/&gt;</div>
+      <span>HTML Viewer</span>
+    </div>
+    <span class="sep"></span>
+    <div class="actions">
+      <button class="btn primary" id="btn-run" title="Run (Ctrl+Enter)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Run
+      </button>
+      <button class="btn" id="btn-format" title="Beautify HTML (Ctrl+Shift+F)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        Format
+      </button>
+      <button class="btn" id="btn-import" title="Import HTML file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Import
+      </button>
+      <button class="btn" id="btn-download" title="Download HTML file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download
+      </button>
+      <span class="sep"></span>
+      <button class="btn" id="btn-console" title="Toggle console">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Console
+      </button>
+      <button class="btn danger" id="btn-clear" title="Clear editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Clear
+      </button>
+    </div>
+    <div class="header-right">
+      <label style="font-size:10px;color:var(--text-muted);margin-right:2px">Auto-run</label>
+      <input type="checkbox" id="auto-run" checked style="accent-color:var(--accent);cursor:pointer" />
+      <span class="sep" style="margin:0 4px"></span>
+
+      <!-- Device buttons -->
+      <button class="layout-btn" id="btn-device-desktop" title="Desktop" style="font-size:12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+      <button class="layout-btn" id="btn-device-tablet" title="Tablet (768px)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </button>
+      <button class="layout-btn" id="btn-device-mobile" title="Mobile (375px)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </button>
+      <span class="sep" style="margin:0 4px"></span>
+      <!-- Layout buttons -->
+      <button class="layout-btn active" id="btn-layout-h" title="Side by side">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+      </button>
+      <button class="layout-btn" id="btn-layout-v" title="Stacked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      </button>
+      <span class="sep" style="margin:0 4px"></span>
+      <button class="btn" id="btn-sample" title="Load sample HTML">Sample</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Editor -->
+    <div class="pane" id="editor-pane">
+      <div class="pane-header">
+        <span class="pane-title">Editor</span>
+        <div class="pane-actions">
+          <button class="pane-btn" id="btn-copy" title="Copy code">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button class="pane-btn" id="btn-wrap" title="Toggle word wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h15a3 3 0 1 1 0 6h-4M14 18l-4-4m4 4l-4 4"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pane-body">
+        <div class="drop-overlay" id="drop-overlay">Drop HTML file here</div>
+        <textarea id="editor"></textarea>
+      </div>
+      <div id="console-panel"></div>
+    </div>
+
+    <!-- Resize -->
+    <div id="resize-handle"></div>
+
+    <!-- Preview -->
+    <div class="pane" id="preview-pane">
+      <div class="pane-header">
+        <span class="pane-title">Preview</span>
+        <div class="pane-actions">
+          <button class="pane-btn" id="btn-refresh" title="Refresh preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+          <button class="pane-btn" id="btn-new-tab" title="Open in new tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pane-body" id="preview-body">
+        <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <div id="status-bar">
+    <div class="status-left">
+      <span><span class="status-dot ok" id="status-dot"></span><span id="status-text">Ready</span></span>
+    </div>
+    <div class="status-right">
+      <span id="stat-size"></span>
+      <span id="stat-lines"></span>
+      <span id="stat-cursor"></span>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".html,.htm,.svg,.xml,.txt" />
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Sample HTML ─────────────────────────────
+  var SAMPLE = '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n  <title>Hello World</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      min-height: 100vh;\n      display: flex; align-items: center; justify-content: center;\n      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;\n      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);\n      color: #fff;\n    }\n    .card {\n      text-align: center; padding: 48px;\n      background: rgba(255,255,255,0.06);\n      backdrop-filter: blur(20px);\n      border: 1px solid rgba(255,255,255,0.1);\n      border-radius: 24px;\n      box-shadow: 0 8px 40px rgba(0,0,0,0.3);\n    }\n    h1 {\n      font-size: 42px; font-weight: 700;\n      background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);\n      -webkit-background-clip: text; -webkit-text-fill-color: transparent;\n      margin-bottom: 12px;\n    }\n    p { color: rgba(255,255,255,0.6); font-size: 16px; line-height: 1.6; }\n    .counter {\n      margin-top: 24px; display: flex; align-items: center;\n      justify-content: center; gap: 12px;\n    }\n    button {\n      padding: 10px 24px; border: none; border-radius: 12px;\n      font-size: 14px; font-weight: 600; cursor: pointer;\n      background: linear-gradient(135deg, #f5576c, #f093fb);\n      color: #fff; transition: transform 0.15s, box-shadow 0.15s;\n    }\n    button:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 6px 20px rgba(245,87,108,0.4);\n    }\n    #count {\n      font-size: 32px; font-weight: 800;\n      min-width: 60px; text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class="card">\n    <h1>Hello, HTML Viewer!</h1>\n    <p>Edit the code on the left and see the preview update in real time.</p>\n    <div class="counter">\n      <button onclick="update(-1)">−</button>\n      <span id="count">0</span>\n      <button onclick="update(+1)">+</button>\n    </div>\n  </div>\n  <script>\n    let count = 0;\n    function update(d) {\n      count += d;\n      document.getElementById("count").textContent = count;\n      console.log("Count:", count);\n    }\n  <\\/script>\n</body>\n</html>';
+
+  // ── Elements ────────────────────────────────
+  var mainEl = document.getElementById("main");
+  var editorPane = document.getElementById("editor-pane");
+  var previewBody = document.getElementById("preview-body");
+  var previewFrame = document.getElementById("preview-frame");
+  var resizeHandle = document.getElementById("resize-handle");
+  var statusText = document.getElementById("status-text");
+  var statSize = document.getElementById("stat-size");
+  var statLines = document.getElementById("stat-lines");
+  var statCursor = document.getElementById("stat-cursor");
+  var toastEl = document.getElementById("toast");
+  var fileInput = document.getElementById("file-input");
+  var dropOverlay = document.getElementById("drop-overlay");
+  var consolePanel = document.getElementById("console-panel");
+  var autoRunCb = document.getElementById("auto-run");
+
+  // ── CodeMirror ──────────────────────────────
+  var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
+    mode: "htmlmixed",
+    lineNumbers: true,
+    matchBrackets: true,
+    matchTags: { bothTags: true },
+    autoCloseTags: true,
+    autoCloseBrackets: true,
+    foldGutter: true,
+    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+    styleActiveLine: true,
+    tabSize: 2,
+    indentWithTabs: false,
+    lineWrapping: false,
+    extraKeys: {
+      "Ctrl-Space": "autocomplete",
+      "Ctrl-Enter": function () { runPreview(); },
+      "Cmd-Enter": function () { runPreview(); }
+    }
+  });
+
+  var debounce = null;
+  var consoleLines = [];
+  var currentDevice = "desktop";
+
+  // ── Auto-run on change ──────────────────────
+  cm.on("change", function () {
+    updateStats();
+    if (autoRunCb.checked) {
+      clearTimeout(debounce);
+      debounce = setTimeout(runPreview, 500);
+    }
+  });
+
+  cm.on("cursorActivity", function () {
+    var pos = cm.getCursor();
+    statCursor.textContent = "Ln " + (pos.line + 1) + ", Col " + (pos.ch + 1);
+  });
+
+  // ── Run preview ─────────────────────────────
+  function runPreview() {
+    var code = cm.getValue();
+    if (!code.trim()) {
+      previewFrame.srcdoc = "";
+      statusText.textContent = "Empty";
+      return;
+    }
+
+    // Inject console capture script
+    var consoleCapture = '<script>\n' +
+      '(function(){\n' +
+      '  var _post = function(type, args) {\n' +
+      '    try { window.parent.postMessage({ _htmlViewerConsole: true, type: type, args: Array.prototype.slice.call(args).map(function(a){ try{return typeof a==="object"?JSON.stringify(a,null,2):String(a)}catch(e){return String(a)} }) }, "*"); } catch(e){}\n' +
+      '  };\n' +
+      '  var _orig = { log: console.log, warn: console.warn, error: console.error, info: console.info };\n' +
+      '  console.log = function(){ _orig.log.apply(console, arguments); _post("log", arguments); };\n' +
+      '  console.warn = function(){ _orig.warn.apply(console, arguments); _post("warn", arguments); };\n' +
+      '  console.error = function(){ _orig.error.apply(console, arguments); _post("error", arguments); };\n' +
+      '  console.info = function(){ _orig.info.apply(console, arguments); _post("log", arguments); };\n' +
+      '  window.addEventListener("error", function(e){ _post("error", [e.message + " (line " + e.lineno + ")"]); });\n' +
+      '})();\n' +
+      '<\/script>\n';
+
+    // Insert capture before </head> or at top
+    var injected;
+    if (/<head[\s>]/i.test(code)) {
+      injected = code.replace(/<head([^>]*)>/i, '<head$1>' + consoleCapture);
+    } else if (/<html[\s>]/i.test(code)) {
+      injected = code.replace(/<html([^>]*)>/i, '<html$1>' + consoleCapture);
+    } else {
+      injected = consoleCapture + code;
+    }
+
+    consoleLines = [];
+    renderConsole();
+    previewFrame.srcdoc = injected;
+    statusText.textContent = "Rendered";
+  }
+
+  // ── Console capture ─────────────────────────
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data._htmlViewerConsole) {
+      consoleLines.push({ type: e.data.type, text: e.data.args.join(" ") });
+      if (consoleLines.length > 200) consoleLines.shift();
+      renderConsole();
+    }
+  });
+
+  function renderConsole() {
+    if (!consolePanel.classList.contains("open")) return;
+    var html = "";
+    for (var i = 0; i < consoleLines.length; i++) {
+      var cl = consoleLines[i];
+      html += '<div class="console-line ' + cl.type + '"><span class="console-badge">' + cl.type + '</span><span>' + escapeHTML(cl.text) + '</span></div>';
+    }
+    consolePanel.innerHTML = html || '<div style="color:var(--text-muted);padding:4px 0;">No console output yet.</div>';
+    consolePanel.scrollTop = consolePanel.scrollHeight;
+  }
+
+  // ── Stats ───────────────────────────────────
+  function updateStats() {
+    var raw = cm.getValue();
+    var bytes = new Blob([raw]).size;
+    statSize.textContent = formatBytes(bytes);
+    statLines.textContent = cm.lineCount() + " lines";
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(2) + " MB";
+  }
+
+  // ── Actions ─────────────────────────────────
+  document.getElementById("btn-run").addEventListener("click", runPreview);
+  document.getElementById("btn-refresh").addEventListener("click", runPreview);
+
+  document.getElementById("btn-format").addEventListener("click", function () {
+    if (typeof html_beautify === "function") {
+      var formatted = html_beautify(cm.getValue(), {
+        indent_size: 2, wrap_line_length: 120,
+        indent_inner_html: true, extra_liners: []
+      });
+      cm.setValue(formatted);
+      toast("Formatted!");
+    } else {
+      toast("Beautify library not loaded", true);
+    }
+  });
+
+  document.getElementById("btn-clear").addEventListener("click", function () {
+    cm.setValue(""); toast("Cleared");
+  });
+
+  document.getElementById("btn-sample").addEventListener("click", function () {
+    cm.setValue(SAMPLE);
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", function () {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(cm.getValue()).then(function () { toast("Copied!"); });
+    }
+  });
+
+  document.getElementById("btn-download").addEventListener("click", function () {
+    var blob = new Blob([cm.getValue()], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "page.html"; a.click();
+    URL.revokeObjectURL(url);
+    toast("Downloaded!");
+  });
+
+  document.getElementById("btn-new-tab").addEventListener("click", function () {
+    var w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(cm.getValue()); w.document.close(); }
+  });
+
+  document.getElementById("btn-wrap").addEventListener("click", function () {
+    var wrap = !cm.getOption("lineWrapping");
+    cm.setOption("lineWrapping", wrap);
+    toast(wrap ? "Word wrap on" : "Word wrap off");
+  });
+
+  // ── Console toggle ──────────────────────────
+  document.getElementById("btn-console").addEventListener("click", function () {
+    consolePanel.classList.toggle("open");
+    if (consolePanel.classList.contains("open")) renderConsole();
+  });
+
+  // ── File import ─────────────────────────────
+  document.getElementById("btn-import").addEventListener("click", function () { fileInput.click(); });
+  fileInput.addEventListener("change", function () {
+    var file = fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { cm.setValue(reader.result); toast("Loaded " + file.name); };
+    reader.readAsText(file);
+    fileInput.value = "";
+  });
+
+  // ── Drag & drop ─────────────────────────────
+  var dragCount = 0;
+  var paneBody = editorPane.querySelector(".pane-body");
+  paneBody.addEventListener("dragenter", function (e) { e.preventDefault(); dragCount++; dropOverlay.classList.add("active"); });
+  paneBody.addEventListener("dragleave", function () { dragCount--; if (dragCount <= 0) { dragCount = 0; dropOverlay.classList.remove("active"); } });
+  paneBody.addEventListener("dragover", function (e) { e.preventDefault(); });
+  paneBody.addEventListener("drop", function (e) {
+    e.preventDefault(); dragCount = 0; dropOverlay.classList.remove("active");
+    var file = e.dataTransfer.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { cm.setValue(reader.result); toast("Loaded " + file.name); };
+    reader.readAsText(file);
+  });
+
+  // ── Layout toggle ───────────────────────────
+  document.getElementById("btn-layout-h").addEventListener("click", function () {
+    mainEl.classList.remove("vertical");
+    document.getElementById("btn-layout-h").classList.add("active");
+    document.getElementById("btn-layout-v").classList.remove("active");
+    editorPane.style.width = "50%"; editorPane.style.height = "";
+    cm.refresh();
+  });
+  document.getElementById("btn-layout-v").addEventListener("click", function () {
+    mainEl.classList.add("vertical");
+    document.getElementById("btn-layout-v").classList.add("active");
+    document.getElementById("btn-layout-h").classList.remove("active");
+    editorPane.style.width = ""; editorPane.style.height = "50%";
+    cm.refresh();
+  });
+
+  // ── Device preview ──────────────────────────
+  function setDevice(mode) {
+    currentDevice = mode;
+    previewBody.className = "pane-body" + (mode !== "desktop" ? " device-" + mode : "");
+    document.getElementById("btn-device-desktop").classList.toggle("active", mode === "desktop");
+    document.getElementById("btn-device-tablet").classList.toggle("active", mode === "tablet");
+    document.getElementById("btn-device-mobile").classList.toggle("active", mode === "mobile");
+  }
+  document.getElementById("btn-device-desktop").addEventListener("click", function () { setDevice("desktop"); });
+  document.getElementById("btn-device-tablet").addEventListener("click", function () { setDevice("tablet"); });
+  document.getElementById("btn-device-mobile").addEventListener("click", function () { setDevice("mobile"); });
+
+  // ── Resize handle ───────────────────────────
+  (function () {
+    var dragging = false;
+    var isVertical = function () { return mainEl.classList.contains("vertical"); };
+
+    resizeHandle.addEventListener("mousedown", function (e) {
+      e.preventDefault(); dragging = true;
+      resizeHandle.classList.add("dragging");
+      document.body.style.cursor = isVertical() ? "row-resize" : "col-resize";
+      document.body.style.userSelect = "none";
+    });
+    window.addEventListener("mousemove", function (e) {
+      if (!dragging) return;
+      var rect = mainEl.getBoundingClientRect();
+      if (isVertical()) {
+        var newH = e.clientY - rect.top;
+        var minH = 100, maxH = rect.height - 100;
+        editorPane.style.height = Math.max(minH, Math.min(maxH, newH)) + "px";
+      } else {
+        var newW = e.clientX - rect.left;
+        var minW = 200, maxW = rect.width - 200;
+        editorPane.style.width = Math.max(minW, Math.min(maxW, newW)) + "px";
+      }
+      cm.refresh();
+    });
+    window.addEventListener("mouseup", function () {
+      if (dragging) {
+        dragging = false;
+        resizeHandle.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    });
+  })();
+
+  // ── Keyboard shortcuts ──────────────────────
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+      e.preventDefault();
+      document.getElementById("btn-format").click();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault(); runPreview();
+    }
+  });
+
+  // ── Toast ───────────────────────────────────
+  var toastTimer;
+  function toast(msg, isErr) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = (isErr ? "✕ " : "✓ ") + msg;
+    toastEl.style.borderColor = isErr ? "var(--error)" : "var(--success)";
+    toastEl.classList.add("show");
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2200);
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ── Init ────────────────────────────────────
+  cm.setValue(SAMPLE);
+  updateStats();
+})();
+</script>
+</body>
+</html>
